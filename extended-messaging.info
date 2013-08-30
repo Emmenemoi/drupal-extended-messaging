@@ -1,0 +1,5 @@
+name = Extended Messaging
+description = Provides Messaging services throuh XMPP and GWT
+package = XMPP
+core = 6.x
+;dependencies[] = autoassignrole
