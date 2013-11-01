@@ -1,0 +1,59 @@
+<?php
+
+define("EXTENDED_MESSAGING_XMPP_DOMAIN", variable_get('extended_messaging_domain', $cookie_domain));
+define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com/http-bind'));
+define("EXTENDED_MESSAGING_XMPP_PORT", variable_get('extended_messaging_port', '5222'));
+
+function extended_messaging_menu() {
+   $items = array();
+     
+   $items['messaging/rpc/%'] = array(
+         'page callback' => 'extended_messaging_rpc',
+         'page arguments' => array(2),
+         'access arguments' => array('access content'),
+         'file' => 'includes/extended_messaging.rpc.inc',
+         'type' => MENU_CALLBACK,
+   );
+   
+   //// ADMIN
+   $items['admin/settings/extended_messaging'] = array(
+         'title' => 'Extended Messaging',
+         'description' => 'Global settings for extended messaging.',
+         'page callback' => 'drupal_get_form',
+         'page arguments' => array('extended_messaging_admin'),
+         'access arguments' => array('admin'),
+         'file' => 'includes/extended_messaging.admin.inc',
+         'type' => MENU_NORMAL_ITEM
+   );
+   
+   
+   return $items;
+}
+
+function extended_messaging_include_settings() {
+   static $current;
+    
+   // be sure we only add the setting only once
+   if ( empty($current) ) {
+      global $user;
+      
+      module_load_include('class.inc', 'extended_messaging', 'includes/classes/ExtendedMessagingUser');
+      
+      $xmpp = ExtendedMessagingUser::instance();
+      
+      $settings = array(
+         'xmpp' => array(
+               'server'   => EXTENDED_MESSAGING_XMPP_SERVER, 
+               'port'     => EXTENDED_MESSAGING_XMPP_PORT, 
+               'domain'   => EXTENDED_MESSAGING_XMPP_DOMAIN,
+               'jid'      => $xmpp->BareJID(),
+               'auth'     => $xmpp->Auth(),
+               'nickname' => $xmpp->Nick(),
+         ),
+         'roles' => user_roles(true),
+         'rpcbase' => url('messaging/rpc/'),       
+      );
+      $old_setting = drupal_add_js(array('extended_messaging' => $settings), 'setting');
+      $current[] = $new_setting;
+   }
+}
