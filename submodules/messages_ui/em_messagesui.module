@@ -1,4 +1,5 @@
 <?php
+module_load_include('inc', 'em_messagesui', 'em_messagesui.chat');
 
 function em_messages_ui_init() {
    
