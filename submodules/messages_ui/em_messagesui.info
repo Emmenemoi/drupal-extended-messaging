@@ -1,0 +1,6 @@
+name = Extended Messaging - Messages UI
+description = Provides GWT UI to Messaging
+package = XMPP
+core = 6.x
+
+dependencies[] = extended_messaging

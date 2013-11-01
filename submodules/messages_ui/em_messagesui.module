@@ -1,0 +1,38 @@
+<?php
+
+function em_messages_ui_init() {
+   
+   /* AJAX check  */
+   if(!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+      return;
+   }
+/* LATER: to keep connection in background during nav with webworkers and co
+   global $cookie_domain;
+   global $user;
+   
+   $module_path = drupal_get_path('module', 'extended_messaging');
+   $script = url($module_path."/gwt_extended_messaging/gwt_extended_messaging.nocache.js")."?".rand(0,10000);
+   
+   drupal_add_js($module_path .'/extended_messaging.js');
+   drupal_add_js(array('extended_messaging' => array('script' => $script)), 'setting');
+  */ 
+}
+
+function em_messagesui_perm() {
+   return array('access messaging chat');
+}
+
+function em_messagesui_menu() {
+   $items = array();
+   
+   $items['messaging/chat'] = array(
+         'title callback' => 'em_messagesui_chat_title',
+         'page callback' => 'em_messagesui_chat_page',
+         'page arguments' => array(),
+         'access arguments' => array('access messaging chat'),
+         'file' => 'em_messagesui.chat.inc',
+         'type' => MENU_NORMAL_ITEM,
+   );   
+   
+   return $items;
+}
