@@ -2,9 +2,17 @@
 
 
 function extended_messaging_admin() {
+
    $form['extended_messaging']['xmpp'] = array(
          '#type' => 'fieldset',
          '#title' => t('XMPP settings'),
+         '#description' => t('Add to Tigase server init.properties the following lines for this domain').':<br/><code>'.
+            "--admins = 1@".EXTENDED_MESSAGING_XMPP_DOMAIN."<br/>".
+            "--auth-db[".EXTENDED_MESSAGING_XMPP_DOMAIN."]=tigase-custom<br/>".
+            "--auth-db-uri[".EXTENDED_MESSAGING_XMPP_DOMAIN."]=jdbc:mysql://&lt;database server&gt;/&lt;database&gt;?user=&lt;db user&gt;&db password=&lt;password&gt;&noAccessToProcedureBodies=true<br>".
+            "--virt-hosts = ".EXTENDED_MESSAGING_XMPP_DOMAIN."<br/>
+--comp-class-3 = tigase.server.websocket.WebSocketClientConnectionManager<br/>
+--comp-name-3 = ws2s</code>"
    );
    
    $form['extended_messaging']['xmpp']['extended_messaging_server'] = array(
