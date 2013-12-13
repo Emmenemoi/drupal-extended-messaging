@@ -1,0 +1,151 @@
+<?php
+
+function extended_messaging_schema() {
+   $schema['extended_messaging_sessions'] = array(
+     'fields' => array(
+       'uid'        => array('type' => 'serial', 'unsigned' => TRUE, 'not null' => TRUE),
+       'token'      => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''),
+       'created'  => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+       'online'     => array('type' => 'int', 'length' => 'small', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+    ),
+     'primary key' => array('uid', 'token'),
+     'indexes' => array(
+       'uid'      => array('uid'),
+       'token'     => array('token'),
+     ),
+   );
+   
+   return $schema;
+}
+
+/**
+* Implementation of hook_install().
+*/
+function extended_messaging_install() {
+  drupal_load('module', 'content');
+  content_notify('install', 'extended_messaging');
+  
+  drupal_install_schema('extended_messaging');
+}
+
+/**
+* Implementation of hook_uninstall().
+*/
+function extended_messaging_uninstall() {
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'extended_messaging');
+  
+  drupal_uninstall_schema('extended_messaging');
+  /* TODO: uninstall proc and properties */
+}
+
+/**
+* Implementation of hook_enable().
+*/
+function extended_messaging_enable() {
+  drupal_load('module', 'content');
+  content_notify('enable', 'extended_messaging');
+}
+
+/**
+* Implementation of hook_disable().
+*/
+function extended_messaging_disable() {
+  drupal_load('module', 'content');
+  content_notify('disable', 'extended_messaging');
+}
+
+function extended_messaging_update_6000() {
+   if (!db_table_exists('extended_messaging_sessions')) {
+      drupal_install_schema('extended_messaging');
+   }
+   
+   $ret = array();
+   
+   $dir = $module_path = drupal_get_path('module', 'extended_messaging').'/install';
+   $loader = array( 'FUNCTION'=>glob("$dir/func/*.sql"), 'PROCEDURE'=> glob("$dir/proc/*.sql"));
+   foreach($loader as $type=>$files) {
+      foreach($files as $proc)
+      {
+         preg_match("/\/([a-z]*?)\.sql$/i", $proc, $m);
+         //dpm($m);
+         if (!empty($m[1]))
+            db_query("DROP $type IF EXISTS `{$m[1]}`");
+         $sp_string = file_get_contents($proc);
+         // TODO: manage db prefixes
+         $ret[] = update_sql($sp_string);
+         
+      }
+   }
+
+   return $ret;
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function extended_messaging_requirements($phase) {
+  $t = get_t();
+  $simpleXML = extension_loaded('simpleXML');
+  $cURL = extension_loaded('cURL');
+  $SSL = extension_loaded('SSL') || extension_loaded('openssl');
+
+  $hipay_field = drupal_load('module', 'libraries')
+    && drupal_load('module', 'hipay_field')
+    && _hipay_field_api_available();
+  $args = array(
+    '!simplexml' => 'http://php.net/simplexml',
+    '%simplexml' => 'simpleXML',
+    '!curl' => 'http://php.net/curl',
+    '%curl' => 'cURL',
+    '!ssl' => 'http://php.net/openssl',
+    '%ssl' => 'openSSL',
+    '!xmpp' => EXTENDED_MESSAGING_XMPP_SERVER,
+  );
+  $libs = array(
+        'extended_messaging_xml' => array(
+              'title' => $t('<a href="!simplexml">%simplexml</a> extension', $args),
+              'value' => ($simpleXML ? 'Enabled' : 'Disabled'),
+              'description' => $t('The <a href="!hipay_field">%hipay_field</a> module requires the PHP <a href="!simplexml">%simplexml</a> extension.', $args),
+              'severity' => ($simpleXML ? REQUIREMENT_OK : REQUIREMENT_WARNING),
+        ),
+        'extended_messaging_curl' => array(
+              'title' => $t('<a href="!curl">%curl</a> extension', $args),
+              'value' => ($cURL ? 'Enabled' : 'Disabled'),
+              'description' => $t('The <a href="!hipay_field">%hipay_field</a> module requires the PHP <a href="!curl">%curl</a> extension.', $args),
+              'severity' => ($cURL ? REQUIREMENT_OK : REQUIREMENT_WARNING),
+        ),
+        'extended_messaging_ssl' => array(
+              'title' => $t('<a href="!ssl">%ssl</a> extension', $args),
+              'value' => ($SSL ? 'Enabled' : 'Disabled'),
+              'description' => $t('The <a href="!hipay_field">%hipay_field</a> module requires the PHP <a href="!ssl">%ssl</a> extension.', $args),
+              'severity' => ($SSL ? REQUIREMENT_OK : REQUIREMENT_WARNING),
+        ),
+  );
+  foreach ($libs as $i=>$lib) {
+     if($lib['severity'] == REQUIREMENT_OK)
+        unset($libs[$i]);
+  }
+  if (count($libs) == 0) {
+     $libs = array(
+        'extended_messaging_libs' => array(
+              'title' => $t('Extended Messaging libs'),
+              'value' => 'Enabled',
+              'description' => $t('The Extended Messaging module requires the PHP  extensions : <a href="!simplexml">%simplexml</a>, <a href="!ssl">%ssl</a>, <a href="!curl">%curl</a>.', $args),
+              'severity' => REQUIREMENT_OK,
+        )); 
+  }
+  
+  return array_merge($libs, array(
+    'extended_messaging_xmpp' => array(
+      'title' => $t('Extended Messaging XMPP auth', $args),
+      'value' => ($xmpp ? 'Available' : 'Unavailable'),
+      'description' => (
+        $xmpp
+        ? $t('The XMPP API can auth at !xmpp.', $args)
+        : $t('The XMPP API can not auth at !xmpp.', $args)
+      ),
+      'severity' => ($xmpp ? REQUIREMENT_OK : REQUIREMENT_WARNING),
+    ),
+  ));
+}

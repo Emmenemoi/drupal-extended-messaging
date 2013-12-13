@@ -1,0 +1,2 @@
+CREATE FUNCTION TigLocalpartFromJID (jid varchar(2049) CHARSET utf8) RETURNS varchar(2049) CHARSET utf8
+RETURN SUBSTRING_INDEX(jid, '@', 1);

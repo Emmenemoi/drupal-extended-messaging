@@ -8,6 +8,8 @@ abstract class ExtendedMessagingBase {
     */
    protected $xmppuser;   
    protected $auth;
+   
+   const      TOKEN_PREFIX = "TOKEN|";
     
    abstract public function User();
    
@@ -31,13 +33,15 @@ abstract class ExtendedMessagingBase {
     * @param XMPPUser $user
     * @return string
     */
-   public static function getAuth($user) {
+   public static function getAuth(XMPPUser $user) {
          $salt = variable_get('extended_messaging_auth_salt', None);
          $timestamp = time();
          $login = $user->BareJID();
          $token = hash('sha256', $login . $timestamp . $salt);
-         $signature = array('volatil', $login, $timestamp, $token);
-         return implode('|', $signature);
+         /*$signature = array('volatil', $login, $timestamp, $token);*/
+         $signature =self::TOKEN_PREFIX. $token;
+         db_query("INSERT INTO {extended_messaging_sessions} (uid, token, created) VALUES (%d, '%s', UNIX_TIMESTAMP() )", $user->uid, $token);
+         return $signature;
    }
    
    public static function instance(){

@@ -3,4 +3,4 @@ description = Provides Messaging services throuh XMPP
 package = XMPP
 core = 6.x
 
-;dependencies[] = autoassignrole
+dependencies[] = variable
