@@ -4,3 +4,4 @@ package = XMPP
 core = 6.x
 
 dependencies[] = variable
+dependencies[] = variable_realm
