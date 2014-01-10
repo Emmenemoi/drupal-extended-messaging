@@ -25,7 +25,7 @@ function extended_messaging_install() {
   drupal_load('module', 'content');
   content_notify('install', 'extended_messaging');
   
-  drupal_install_schema('extended_messaging');
+  extended_messaging_update_6000();
 }
 
 /**
