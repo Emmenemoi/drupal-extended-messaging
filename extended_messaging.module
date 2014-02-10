@@ -1,7 +1,7 @@
 <?php
 
 define("EXTENDED_MESSAGING_XMPP_DOMAIN", variable_get('extended_messaging_domain', $cookie_domain));
-define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com:5280/bosh'));
+define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com:5280/http-bind/'));
 define("EXTENDED_MESSAGING_XMPP_PORT", variable_get('extended_messaging_port', '5222'));
 define("EXTENDED_MESSAGING_XMPP_WS_URL", variable_get('extended_messaging_ws_url', 'ws://xmpp.asaoweb.com:5280/xmpp-websocket/'));
 
