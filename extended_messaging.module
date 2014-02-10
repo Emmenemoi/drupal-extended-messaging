@@ -1,8 +1,10 @@
 <?php
 
 define("EXTENDED_MESSAGING_XMPP_DOMAIN", variable_get('extended_messaging_domain', $cookie_domain));
-define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com/http-bind'));
+define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com:5280/bosh'));
 define("EXTENDED_MESSAGING_XMPP_PORT", variable_get('extended_messaging_port', '5222'));
+define("EXTENDED_MESSAGING_XMPP_WS_URL", variable_get('extended_messaging_ws_url', 'ws://xmpp.asaoweb.com:5280/xmpp-websocket/'));
+
 
 function extended_messaging_menu() {
    $items = array();
@@ -44,6 +46,7 @@ function extended_messaging_include_settings() {
       $settings = array(
          'xmpp' => array(
                'server'   => EXTENDED_MESSAGING_XMPP_SERVER, 
+               'ws'       => EXTENDED_MESSAGING_XMPP_WS_URL, 
                'port'     => EXTENDED_MESSAGING_XMPP_PORT, 
                'domain'   => EXTENDED_MESSAGING_XMPP_DOMAIN,
                'jid'      => $xmpp->BareJID(),

@@ -22,6 +22,13 @@ function extended_messaging_admin() {
          '#default_value' => EXTENDED_MESSAGING_XMPP_SERVER,
    );
    
+   $form['extended_messaging']['xmpp']['extended_messaging_ws_url'] = array(
+         '#type' => 'textfield',
+         '#title' => t('XMPP server URL'),
+         '#description' => t('Should be a valid WS url to a websocket url (ws://) including port. (optional)'),
+         '#default_value' => EXTENDED_MESSAGING_XMPP_WS_URL,
+   );
+   
    $form['extended_messaging']['xmpp']['extended_messaging_port'] = array(
          '#type' => 'textfield',
          '#title' => t('XMPP server port'),
