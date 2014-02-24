@@ -6,14 +6,51 @@ function extended_messaging_admin() {
    $form['extended_messaging']['xmpp'] = array(
          '#type' => 'fieldset',
          '#title' => t('XMPP settings'),
-         '#description' => t('Add to Tigase server init.properties the following lines for this domain').':<br/><code>'.
+   );
+   
+   $form['extended_messaging']['xmpp']['tigase_help'] = array(
+         '#type' => 'fieldset',
+         '#title' => t('Tigase config'),
+         '#collapsible' => true,
+         '#collapsed' =>true,
+         '#description' => t('Add to Tigase server init.properties the following lines for this domain').':<br/><code style="white-space:pre-line;">'.
             "--admins = 1@".EXTENDED_MESSAGING_XMPP_DOMAIN."<br/>".
             "--auth-db[".EXTENDED_MESSAGING_XMPP_DOMAIN."]=tigase-custom<br/>".
             "--auth-db-uri[".EXTENDED_MESSAGING_XMPP_DOMAIN."]=jdbc:mysql://&lt;database server&gt;/&lt;database&gt;?user=&lt;db user&gt;&db password=&lt;password&gt;&noAccessToProcedureBodies=true<br>".
             "--virt-hosts = ".EXTENDED_MESSAGING_XMPP_DOMAIN."<br/>
 --comp-class-3 = tigase.server.websocket.WebSocketClientConnectionManager<br/>
---comp-name-3 = ws2s</code>"
-   );
+--comp-name-3 = ws2s</code>"   );
+   
+   $form['extended_messaging']['xmpp']['prosody_help'] = array(
+         '#type' => 'fieldset',
+         '#title' => t('Prosody config'),
+         '#collapsible' => true,
+         '#collapsed' =>true,
+         '#description' => t('Add to Prosody server prosody.cfg.lua the following lines for this domain').':<br/><code style="white-space:pre-line;">'.
+         'VirtualHost "'.EXTENDED_MESSAGING_XMPP_DOMAIN.'"
+               enabled = true -- Remove this line to enable this host
+               authentication = "sqlproc" -- be sure to have the mod_auth_sqlproc enabled
+               auth_sql_procedures = { auth = "TigUserLoginPlainPw"; }
+               admins = { "1@'.EXTENDED_MESSAGING_XMPP_DOMAIN.'" }
+               default_storage = "sql" -- Default is "internal"
+               sql_manage_tables = true;
+               cross_domain_bosh = true;
+               cross_domain_websocket = true;
+
+               --storage = "sql"
+                     storage = {
+                  archive2 = "sql";
+               }
+
+               sql = {
+                  driver = "MySQL"; -- May also be "MySQL" or "SQLite3" (case sensitive!)
+                  database = "&lt;database&gt;"; -- The database name to use. For SQLite3 this the database filename (relative to the data storage directory).
+                  host = "&lt;database server&gt;"; -- The address of the database server (delete this line for Postgre
+                        username = "&lt;db user&gt;"; -- The username to authenticate to the database
+                        password = "&lt;db password&gt;"; -- The password to authenticate to the database
+               }
+
+</code>'   );
    
    $form['extended_messaging']['xmpp']['extended_messaging_server'] = array(
          '#type' => 'textfield',
