@@ -82,7 +82,7 @@ function extended_messaging_admin() {
    $form['extended_messaging']['xmpp']['extended_messaging_auth_salt'] = array(
          '#type' => 'textfield',
          '#title' => t('XMPP Authentication Salt'),
-         '#default_value' => variable_get('extended_messaging_auth_salt', None),
+         '#default_value' => variable_get('extended_messaging_auth_salt', 'None'),
    );
    
    $form = system_settings_form($form);

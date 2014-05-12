@@ -57,6 +57,6 @@ function extended_messaging_include_settings() {
          'rpcbase' => url('messaging/rpc/'),       
       );
       $old_setting = drupal_add_js(array('extended_messaging' => $settings), 'setting');
-      $current[] = $new_setting;
+      $current[] = $settings;
    }
 }

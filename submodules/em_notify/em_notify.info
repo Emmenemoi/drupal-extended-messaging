@@ -1,0 +1,6 @@
+name = Extended Messaging - Notify
+description = Provides external notifications of new messages to Extended Messaging
+package = XMPP
+core = 6.x
+
+dependencies[] = extended_messaging
