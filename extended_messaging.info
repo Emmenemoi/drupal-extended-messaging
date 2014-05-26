@@ -1,7 +1,7 @@
 name = Extended Messaging - core
 description = Provides Messaging services throuh XMPP
 package = XMPP
-core = 6.x
+core = 7.x
 
-dependencies[] = variable
-dependencies[] = variable_realm
+;dependencies[] = variable
+;dependencies[] = variable_realm

@@ -1,0 +1,390 @@
+<?php
+
+/**
+ * @file
+ * Notifies users about new Private Messages via Email.
+ */
+
+function em_notify_cronapi($op, $job = NULL) {
+
+  $items['em_notify_unread_cron'] = array(
+    'description' => 'Send unread notifications to users',
+    'rule' => '* * * * *', // Every 5 minutes
+    'callback' => 'em_notify_unread_cron',
+    'file'=> 'em_notify.cron.inc'
+  );
+  
+  return $items;
+}
+
+
+/**
+ * Retrieve notification setting of a user.
+ *
+ * This function retrieves user's pm notification preference from database,
+ * if user preference doesn't exist - it uses default value instead
+ *
+ * @param $uid
+ *   User uid
+ */
+function _em_notify_is_enabled($uid) {
+  return true;
+}
+
+/**
+ * Implements hook_privatemsg_message_insert().
+ */
+function em_notify_privatemsg_message_insert($message) {
+  foreach ($message->recipients as $recipient) {
+    // check if recipient enabled email notifications
+    if (isset($recipient->uid) && _em_notify_is_enabled($recipient->uid)) {
+      // send them a new pm notification email if they did
+      $params['recipient'] = $recipient;
+      $params['message'] = $message;
+      // token replace for email from address
+      $data = array(
+        'privatemsg_message' => $params['message'],
+        'privatemsg_recipient' => $params['recipient'],
+      );
+      $options = array(
+        'language' => user_preferred_language($params['recipient']),
+        // Don't sanitize output since this is used in an email, not a browser.
+        'sanitize' => FALSE,
+        // Custom token to avoid custom token handling.
+        'privatemsg-display-invalid' => FALSE,
+      );
+      $from = trim(token_replace(variable_get('em_notify_from', ''), $data, $options));
+      drupal_mail('em_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, !empty($from) ? $from : NULL);
+    }
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function em_notify_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'notice':
+      $data = array(
+        'em_message' => $params['message'],
+        'em_recipient' => $params['recipient'],
+      );
+      $options = array(
+        'language' => user_preferred_language($params['recipient']),
+        // Don't sanitize output since this is used in an email, not a browser.
+        'sanitize' => FALSE,
+        // Custom token to avoid custom token handling.
+        'privatemsg-display-invalid' => FALSE,
+      );
+      $message['subject'] = trim(token_replace(variable_get('em_notify_subject', 'New privates messages at [site:name].'), $data, $options));
+      $message['body'][] = trim(token_replace(variable_get('em_notify_body', _em_notify_default_body()), $data, $options));
+      break;
+  }
+}
+
+/**
+ * Returns default email notification body.
+ */
+function _em_notify_default_body() {
+  return "Hi [em_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [em_message:author].\n\nTo read your message, follow this link:\n[em_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[em_message:recipient:edit-url]";
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function em_notify_form_alter(&$form, &$form_state, $form_id) {
+  if (($form_id == 'user_register_form' || $form_id == 'user_profile_form') && $form['#user_category'] == 'account' ) {
+    $form['extended_messaging']['em_send_notifications'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Receive email notification for incoming messages'),
+      '#default_value' => _em_notify_is_enabled($form['#user']->uid),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="pm_enable"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function em_notify_form_extended_messaging_admin_alter(&$form, &$form_state) {
+  $form['em_notify'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('E-mail notify'),
+    '#group' => 'settings',
+    '#weight' => 22,
+  );
+
+  $form['em_notify']['em_notify_default'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Notify users of new private messages by default'),
+    '#default_value' => variable_get('em_notify_default', TRUE),
+    '#weight' => 0,
+  );
+
+  $form['em_notify']['em_notify_desc'] = array(
+    '#type' => 'item',
+    '#title' => t('Customize the email messages sent to users upon receipt of a new private message.'),
+    '#weight' => 1,
+  );
+
+  $form['em_notify']['em_notify_from'] = array(
+    '#type' => 'textfield',
+    '#title' => t('From e-mail address for notifications'),
+    '#default_value' => variable_get('em_notify_from',''),
+    '#weight' => 2,
+    '#description' => t('This is the e-mail address that notifications will come from. Leave blank to use the site default.'),
+  );
+
+  $form['em_notify']['em_notify_subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject of notification messages'),
+    '#default_value' => variable_get('em_notify_subject', t('New private message at [site:name].')),
+    '#weight' => 2,
+  );
+
+  $form['em_notify']['em_notify_body'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Body of notification messages'),
+    '#default_value' => variable_get('em_notify_body', _em_notify_default_body()),
+    '#weight' => 3,
+  );
+
+  if (module_exists('token')) {
+    $form['em_notify']['token'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Token browser'),
+      '#weight' => -1,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#weight' => 4,
+    );
+    $form['em_notify']['token']['browser'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('em_message'),
+    );
+  }
+  else {
+    $form['em_notify']['tokens'] = array(
+      '#type' => 'item',
+      '#value' => t('Available variables are: !author, !author_uid, !pm_subject, !pm_body, !thread, !site, !login_url, !uri, !uri_brief, !message (URL) and !settings (URL).'),
+      '#weight' => 4,
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function em_notify_token_info() {
+  $type = array(
+    'name' => t('Extended Messages'),
+    'description' => t('Tokens related to extended messages.'),
+    'needs-data' => 'em_message',
+  );
+
+  // Tokens for private messages.
+  $message['mid'] = array(
+    'name' => t("Message ID"),
+    'description' => t("The unique ID of the message."),
+  );
+  $message['url'] = array(
+    'name' => t("URL"),
+    'description' => t("URL that points to the message."),
+  );
+  $message['body'] = array(
+    'name' => t("Body"),
+    'description' => t("The body of the message."),
+  );
+
+  // Chained tokens for nodes.
+  $message['timestamp'] = array(
+    'name' => t("Date created"),
+    'description' => t("The date the message was sent."),
+    'type' => 'date',
+  );
+  $message['author'] = array(
+    'name' => t("Author"),
+    'description' => t("The author of the message."),
+    'type' => 'user',
+  );
+  $message['recipient'] = array(
+    'name' => t("Recipient"),
+    'description' => t("The recipient of the message."),
+    'type' => 'user',
+  );
+  $message['unreads'] = array(
+    'name' => t("Unread digest"),
+    'description' => t("The unread digest for a recipient."),
+  );
+
+  return array(
+    'types' => array('em_message' => $type),
+    'tokens' => array('em_message' => $message),
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function em_notify_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  global $user;
+  $url_options = array('absolute' => TRUE);
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+
+  $recipient = $user;
+  if (isset($data['em_recipient'])) {
+    $recipient = $data['em_recipient'];
+  }
+
+  $sanitize = !empty($options['sanitize']) && $options['sanitize'];
+  $replacements = array();
+  if ($type == 'em_message' && !empty($data['em_message'])) {
+    $message = $data['em_message'];
+
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'mid':
+          $replacements[$original] = $message->mid;
+          break;
+        case 'body':
+          // Avoid recursion.
+          if (empty($options['em_recursion'])) {
+            $replacements[$original] = em_notify_token_replace($sanitize ? check_markup($message->body, $message->format) : $message->body, $data, $options + array('em_recursion' => 1));
+          }
+          else {
+            $replacements[$original] = $sanitize ? check_markup($message->body, $message->format) : $message->body;
+          }
+          break;
+        case 'unreads':
+          // Avoid recursion.
+          if (empty($options['em_recursion'])) {
+            $replacements[$original] = em_notify_token_replace($sanitize ? check_markup($message->unreads, $message->format) : $message->unreads, $data, $options + array('em_recursion' => 1));
+          }
+          else {
+            $replacements[$original] = $sanitize ? check_markup($message->unreads, $message->format) : $message->unreads;
+          }
+          break;
+        case 'url':
+          /*$uri['path'] = 'messaging/chat';
+          $uri['options'] = isset($message->author) ? array('query'=>'#chat;new='.$message->author->uid)  : array() ;*/
+          $replacements[$original] = extended_messaging_url_to($message->author, $url_options); //url($uri['path'], $url_options + $uri['options']);
+          break;
+
+        // Default values for the chained tokens handled below.
+        case 'author':
+          $replacements[$original] = $sanitize ? filter_xss( $message->author ) : $message->author ;
+          break;
+
+        case 'recipient':
+            $replacements[$original] = $sanitize ? filter_xss( $recipient->name) : $recipient->name ;
+          break;
+
+        case 'timestamp':
+          $replacements[$original] = format_date($message->timestamp, 'medium', '', NULL, $language_code);
+          break;
+      }
+    }
+
+    if ($author_tokens = token_find_with_prefix($tokens, 'author')) {
+      $replacements += token_generate('user', $author_tokens, array('user' => $message->author), $options);
+    }
+
+    if ($recipient_tokens = token_find_with_prefix($tokens, 'recipient')) {
+      $replacements += token_generate('user', $recipient_tokens, array('user' => $recipient), $options);
+    }
+
+    if ($sent_tokens = token_find_with_prefix($tokens, 'timestamp')) {
+      $replacements += token_generate('date', $sent_tokens, array('date' => $message->timestamp), $options);
+    }
+  }
+
+  return $replacements;
+}
+
+/**
+ * Wrapper function for token_replace() that does not replace the tokens if the
+ * user viewing the message is not a recipient.
+ */
+function em_notify_token_replace($text, $data, array $options = array()) {
+  global $user;
+  if (empty($data['em_recipient'])) {
+    $recipient = $user;
+  }
+  else {
+    $recipient = $data['em_recipient'];
+  }
+
+  if (isset($options['language'])) {
+    $url_options['language'] = $options['language'];
+    $language_code = $options['language']->language;
+  }
+  else {
+    $language_code = NULL;
+  }
+
+  $message = $data['em_message'];
+  $show_span = !isset($options['em-show-span']) || $options['em-show-span'];
+
+  // We do not replace tokens if the user viewing the message is the author
+  if ($message->author->uid == $recipient->uid) {
+    // Get all tokens of the message.
+    $tokens = token_scan($text);
+    $invalid_tokens = array();
+    if (function_exists('token_get_invalid_tokens_by_context')) {
+      $invalid_tokens = token_get_invalid_tokens_by_context($text, array('em_message'));
+    }
+
+    if (!empty($tokens)) {
+      $replacements = array();
+      // Loop over the found tokens.
+      foreach ($tokens as $tokens_type) {
+        // token_replace() returns tokens separated by type.
+        foreach ($tokens_type as $original) {
+          // Displaying invalid tokens only works with token.module.
+          if (in_array($original, $invalid_tokens)) {
+            $token = t('INVALID TOKEN @token', array('@token' => $original), array('langcode' => $language_code));
+            if (!$show_span) {
+              $replacements[$original] = '< ' . $token . ' >';
+            }
+            else {
+              $replacements[$original] = '<span class="em-token-invalid">&lt; ' . $token . ' &gt;</span>';
+            }
+          }
+          else {
+            $token = t('Token @token', array('@token' => $original), array('langcode' => $language_code));
+            if (!$show_span) {
+              $replacements[$original] = '< ' . $token . ' >';
+            }
+            else {
+              $replacements[$original] = '<span class="em-token-valid">&lt; ' . $token . ' &gt;</span>';
+            }
+          }
+        }
+      }
+      $text = str_replace(array_keys($replacements), $replacements, $text);
+
+      // If there are any tokens, add a notice that the tokens will be replaced
+      // for the recipient.
+      if (!empty($options['em-token-notice'])) {
+        $text .= '<p class="em-token-notice">' . t('Note: Valid tokens will be replaced when a recipient is reading this message.') . '</p>';
+      }
+    }
+    return $text;
+  }
+
+  // If the user is a recipient, use default token_replace() function.
+  return token_replace($text, $data, $options);
+}
+

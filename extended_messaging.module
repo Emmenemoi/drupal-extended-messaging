@@ -1,10 +1,10 @@
 <?php
 
-define("EXTENDED_MESSAGING_XMPP_DOMAIN", variable_get('extended_messaging_domain', $cookie_domain));
+define("EXTENDED_MESSAGING_XMPP_DOMAIN", variable_get('extended_messaging_domain', 'localhost'));
 define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com:5280/http-bind/'));
 define("EXTENDED_MESSAGING_XMPP_PORT", variable_get('extended_messaging_port', '5222'));
 define("EXTENDED_MESSAGING_XMPP_WS_URL", variable_get('extended_messaging_ws_url', 'ws://xmpp.asaoweb.com:5280/xmpp-websocket/'));
-
+define("EXTENDED_MESSAGING_XMPP_PRICACY_MODE", variable_get('extended_messaging_privacy_mode', 'blacklist'));
 
 function extended_messaging_menu() {
    $items = array();
@@ -27,12 +27,11 @@ function extended_messaging_menu() {
          'file' => 'includes/extended_messaging.admin.inc',
          'type' => MENU_NORMAL_ITEM
    );
-   
-   
+     
    return $items;
 }
 
-function extended_messaging_include_settings() {
+function extended_messaging_include_settings($with=0) {
    static $current;
     
    // be sure we only add the setting only once
@@ -52,11 +51,25 @@ function extended_messaging_include_settings() {
                'jid'      => $xmpp->BareJID(),
                'auth'     => $xmpp->Auth(),
                'nickname' => $xmpp->Nick(),
+               'groups'   => array("groups" => array( 
+                                array("xmppname"=>"Friends", "displayname"=>"Mes amis" ), 
+                                )), //{ "groups" : [ { "xmppname":"Friends", "displayname":"Mes amis"}, { "xmppname":"Sales", "displayname":"Ventes"} ] }
          ),
          'roles' => user_roles(true),
-         'rpcbase' => url('messaging/rpc/'),       
+         'rpcbase' => url('messaging/rpc/'),
       );
+      drupal_alter('em_roster_groups', $settings['xmpp']['groups']);
+      $htmlcolumnurl = "";
+      drupal_alter('em_html_url', $htmlcolumnurl);
+      if (!empty($htmlcolumnurl)) {
+        $settings['htmlcol'] = $htmlcolumnurl;
+      }
+      if ( !empty($with)) {
+        $settings['initwith'] = $with->uid;
+      }
+
       $old_setting = drupal_add_js(array('extended_messaging' => $settings), 'setting');
-      $current[] = $new_setting;
+      $current[] = $settings;
    }
 }
+

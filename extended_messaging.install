@@ -25,7 +25,7 @@ function extended_messaging_install() {
   drupal_load('module', 'content');
   content_notify('install', 'extended_messaging');
   
-  extended_messaging_update_6000();
+  extended_messaging_update_7000();
 }
 
 /**
@@ -33,8 +33,6 @@ function extended_messaging_install() {
 */
 function extended_messaging_uninstall() {
   drupal_load('module', 'content');
-  content_notify('uninstall', 'extended_messaging');
-  
   drupal_uninstall_schema('extended_messaging');
   /* TODO: uninstall proc and properties */
 }
@@ -44,7 +42,6 @@ function extended_messaging_uninstall() {
 */
 function extended_messaging_enable() {
   drupal_load('module', 'content');
-  content_notify('enable', 'extended_messaging');
 }
 
 /**
@@ -55,15 +52,16 @@ function extended_messaging_disable() {
   content_notify('disable', 'extended_messaging');
 }
 
-function extended_messaging_update_6000() {
+function extended_messaging_update_7000(&$sandbox) {
+
    if (!db_table_exists('extended_messaging_sessions')) {
       drupal_install_schema('extended_messaging');
    }
    
-   $ret = array();
-   
-   $dir = $module_path = drupal_get_path('module', 'extended_messaging').'/install';
-   $loader = array( 'FUNCTION'=>glob("$dir/func/*.sql"), 'PROCEDURE'=> glob("$dir/proc/*.sql"));
+  $ret = array();   
+  $dir = $module_path = drupal_get_path('module', 'extended_messaging').'/install';
+  $loader = array( 'FUNCTION'=>glob("$dir/func/*.sql"), 'PROCEDURE'=> glob("$dir/proc/*.sql"));
+
    foreach($loader as $type=>$files) {
       foreach($files as $proc)
       {
@@ -73,12 +71,14 @@ function extended_messaging_update_6000() {
             db_query("DROP $type IF EXISTS `{$m[1]}`");
          $sp_string = file_get_contents($proc);
          // TODO: manage db prefixes
-         $ret[] = update_sql($sp_string);
+         $ret[] = db_query($sp_string);
          
       }
    }
 
-   return $ret;
+   return t('Functions and Procs installed');
+
+   throw new DrupalUpdateException('Something went wrong; Functions and Procs not installed');
 }
 
 /**
@@ -89,6 +89,7 @@ function extended_messaging_requirements($phase) {
   $simpleXML = extension_loaded('simpleXML');
   $cURL = extension_loaded('cURL');
   $SSL = extension_loaded('SSL') || extension_loaded('openssl');
+  $xmpp = true;
 
   $hipay_field = drupal_load('module', 'libraries')
     && drupal_load('module', 'hipay_field')

@@ -17,13 +17,21 @@
  */
 
 function extended_messaging_rpc($subject) {
-   drupal_set_header('Content-Type: text/javascript');  
-   drupal_set_header('Cache-Control: no-cache');  
-   drupal_set_header('Pragma: no-cache');
-   drupal_set_header('Access-Control-Allow-Origin: "*" IS_CORS');
-   drupal_set_header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
-   drupal_set_header('Access-Control-Allow-Headers: x-requested-with');
-   
+   if (function_exists( 'drupal_add_http_header')) {
+       drupal_add_http_header('Content-Type','text/javascript');  
+       drupal_add_http_header('Cache-Control','no-cache');  
+       drupal_add_http_header('Pragma', 'no-cache');
+       drupal_add_http_header('Access-Control-Allow-Origin', '"*" IS_CORS');
+       drupal_add_http_header('Access-Control-Allow-Methods', 'PUT, GET, POST, DELETE, OPTIONS');
+       drupal_add_http_header('Access-Control-Allow-Headers', 'x-requested-with');
+   } else {
+       drupal_set_header('Content-Type: text/javascript');  
+       drupal_set_header('Cache-Control: no-cache');  
+       drupal_set_header('Pragma: no-cache');
+       drupal_set_header('Access-Control-Allow-Origin: "*" IS_CORS');
+       drupal_set_header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
+       drupal_set_header('Access-Control-Allow-Headers: x-requested-with');
+   }
    static $return_filter = array('uid'=>0, 'nid'=>0, 'created'=>0, 'updated'=>0, 'title'=>0, 'name'=>0, 'body'=>0);
    static $functions = array('load'=>'%subject_load');
    /** TODO: ajouter des hooks alter **/
