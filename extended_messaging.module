@@ -58,15 +58,17 @@ function extended_messaging_include_settings($with=0) {
          'roles' => user_roles(true),
          'rpcbase' => url('messaging/rpc/'),
       );
+      
       drupal_alter('em_roster_groups', $settings['xmpp']['groups']);
       $htmlcolumnurl = "";
       drupal_alter('em_html_url', $htmlcolumnurl);
       if (!empty($htmlcolumnurl)) {
         $settings['htmlcol'] = $htmlcolumnurl;
       }
-      if ( !empty($with)) {
+      if ( is_object($with) && $with->uid > 0) {
         $settings['initwith'] = $with->uid;
       }
+      drupal_alter('em_settings', $settings);
 
       $old_setting = drupal_add_js(array('extended_messaging' => $settings), 'setting');
       $current[] = $settings;

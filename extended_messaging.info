@@ -5,3 +5,9 @@ core = 7.x
 
 ;dependencies[] = variable
 ;dependencies[] = variable_realm
+
+files[] = includes/classes/ExtendedMessagingUser.class.inc
+files[] = includes/classes/ExtendedMessagingAdmin.class.inc
+files[] = includes/classes/ExtendedMessagingSystem.class.inc
+files[] = includes/classes/XMPPUser.class.inc
+
