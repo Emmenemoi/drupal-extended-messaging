@@ -38,9 +38,9 @@ function extended_messaging_include_settings() {
    // be sure we only add the setting only once
    if ( empty($current) ) {
       global $user;
-      
+            
       module_load_include('class.inc', 'extended_messaging', 'includes/classes/ExtendedMessagingUser');
-      
+
       $xmpp = ExtendedMessagingUser::instance();
       
       $settings = array(
@@ -52,10 +52,24 @@ function extended_messaging_include_settings() {
                'jid'      => $xmpp->BareJID(),
                'auth'     => $xmpp->Auth(),
                'nickname' => $xmpp->Nick(),
-         ),
+               'groups'   => array("groups" => array( 
+                              array("xmppname"=>"Friends", "displayname"=>"Mes amis" ), 
+			  )), 
+        ),
          'roles' => user_roles(true),
-         'rpcbase' => url('messaging/rpc/'),       
       );
+
+      drupal_alter('em_roster_groups', $settings['xmpp']['groups']);
+      $htmlcolumnurl = "";
+      drupal_alter('em_html_url', $htmlcolumnurl);
+      if (!empty($htmlcolumnurl)) {
+        $settings['htmlcol'] = $htmlcolumnurl;
+      }
+      if ( !empty($with)) {
+        $settings['initwith'] = $with->uid;
+      }
+      drupal_alter('em_settings', $settings);
+
       $old_setting = drupal_add_js(array('extended_messaging' => $settings), 'setting');
       $current[] = $settings;
    }
