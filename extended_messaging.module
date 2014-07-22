@@ -69,7 +69,10 @@ function extended_messaging_include_settings($with=0) {
         $settings['initwith'] = $with->uid;
       }
       drupal_alter('em_settings', $settings);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 880f46d1e3ad72439078d2bd92da385d48fc80cc
       $old_setting = drupal_add_js(array('extended_messaging' => $settings), 'setting');
       $current[] = $settings;
    }
