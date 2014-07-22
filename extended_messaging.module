@@ -4,7 +4,7 @@ define("EXTENDED_MESSAGING_XMPP_DOMAIN", variable_get('extended_messaging_domain
 define("EXTENDED_MESSAGING_XMPP_SERVER", variable_get('extended_messaging_server', 'http://xmpp.asaoweb.com:5280/http-bind/'));
 define("EXTENDED_MESSAGING_XMPP_PORT", variable_get('extended_messaging_port', '5222'));
 define("EXTENDED_MESSAGING_XMPP_WS_URL", variable_get('extended_messaging_ws_url', 'ws://xmpp.asaoweb.com:5280/xmpp-websocket/'));
-
+define("EXTENDED_MESSAGING_XMPP_PRICACY_MODE", variable_get('extended_messaging_privacy_mode', 'blacklist'));
 
 function extended_messaging_menu() {
    $items = array();
@@ -27,12 +27,11 @@ function extended_messaging_menu() {
          'file' => 'includes/extended_messaging.admin.inc',
          'type' => MENU_NORMAL_ITEM
    );
-   
-   
+    
    return $items;
 }
 
-function extended_messaging_include_settings() {
+function extended_messaging_include_settings($with=0) {
    static $current;
     
    // be sure we only add the setting only once
@@ -57,6 +56,7 @@ function extended_messaging_include_settings() {
 			  )), 
         ),
          'roles' => user_roles(true),
+         'rpcbase' => url('messaging/rpc/'),
       );
 
       drupal_alter('em_roster_groups', $settings['xmpp']['groups']);
@@ -65,7 +65,7 @@ function extended_messaging_include_settings() {
       if (!empty($htmlcolumnurl)) {
         $settings['htmlcol'] = $htmlcolumnurl;
       }
-      if ( !empty($with)) {
+      if ( is_object($with) && $with->uid > 0) {
         $settings['initwith'] = $with->uid;
       }
       drupal_alter('em_settings', $settings);
