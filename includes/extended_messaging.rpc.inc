@@ -24,9 +24,14 @@ function extended_messaging_rpc($subject) {
    drupal_set_header('Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS');
    drupal_set_header('Access-Control-Allow-Headers: x-requested-with');
    
-   static $return_filter = array('uid'=>0, 'nid'=>0, 'created'=>0, 'updated'=>0, 'title'=>0, 'name'=>0, 'body'=>0);
-   static $functions = array('load'=>'%subject_load');
-   /** TODO: ajouter des hooks alter **/
+   static $return_filter;
+   static $functions;
+   if ( !isset($return_filter) || !isset($functions) ) {
+      $return_filter = array('uid'=>0, 'nid'=>0, 'created'=>0, 'updated'=>0, 'title'=>0, 'name'=>0, 'body'=>0, 'jid'=>0);
+      $functions = array('load'=>'%subject_load', 'set'=>'%subject_set');
+      drupal_alter('em_rpc_filter', $return_filter);
+      drupal_alter('em_rpc_functions', $functions);      
+   }
    
    //$request = json_decode($_REQUEST['messaging_rpc_cmd']);
    $rawPOST = file_get_contents('php://input'); 

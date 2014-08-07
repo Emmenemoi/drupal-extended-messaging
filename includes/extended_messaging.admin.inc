@@ -84,7 +84,12 @@ function extended_messaging_admin() {
          '#title' => t('XMPP Authentication Salt'),
          '#default_value' => variable_get('extended_messaging_auth_salt', 'None'),
    );
-   
+  
+   $form['extended_messaging']['extended_messaging_debug'] = array(
+         '#type' => 'checkbox',
+         '#title' => t('Display debug'),
+         '#default_value' => variable_get('extended_messaging_debug', 0),
+   );
    $form = system_settings_form($form);
    
    return $form;

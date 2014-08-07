@@ -57,6 +57,7 @@ function extended_messaging_include_settings($with=0) {
         ),
          'roles' => user_roles(true),
          'rpcbase' => url('messaging/rpc/'),
+         'debug' => variable_get('extended_messaging_debug', 0)
       );
 
       drupal_alter('em_roster_groups', $settings['xmpp']['groups']);
