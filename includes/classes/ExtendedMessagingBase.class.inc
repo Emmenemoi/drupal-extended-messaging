@@ -34,22 +34,19 @@ abstract class ExtendedMessagingBase {
     * @return string
     */
    public static function getAuth(XMPPUser $user) {
-         $salt = variable_get('extended_messaging_auth_salt', 'None');
-         $timestamp = time();
-         $login = $user->BareJID();
-         $token = hash('sha256', $login . $timestamp . $salt);
-         /*$signature = array('volatil', $login, $timestamp, $token);*/
-         $signature =self::TOKEN_PREFIX. $token;
-        // D6 // db_query("INSERT INTO {extended_messaging_sessions} (uid, token, created) VALUES (%d, '%s', UNIX_TIMESTAMP() )", $user->uid, $token);
-        $nid = db_insert('extended_messaging_sessions')
-          ->fields(array(
-            'uid' => $user->uid,
+          $salt = variable_get('extended_messaging_auth_salt', None);
+          $timestamp = time();
+          $login = $user->BareJID();
+          $token = hash('sha256', $login . $timestamp . $salt);
+          /*$signature = array('volatil', $login, $timestamp, $token);*/
+          $signature =self::TOKEN_PREFIX. $token;
+          $data = array(
             'token' => $token,
+            'uid' => $user->uid,
             'created' => REQUEST_TIME,
-          ))
-          ->execute();
-
-         return $signature;
+          );
+          drupal_write_record('extended_messaging_sessions', $data);
+          return $signature;
    }
    
    public static function instance(){

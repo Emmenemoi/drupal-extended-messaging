@@ -1,7 +1,5 @@
 <?php
 
-module_load_include('class.inc', 'extended_messaging', 'includes/classes/ExtendedMessagingBase');
-
 class ExtendedMessagingSystem extends ExtendedMessagingBase {
    
    public function User() {
