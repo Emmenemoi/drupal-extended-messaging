@@ -5,7 +5,7 @@ class XMPPUser {
    public $nickname;
    public $uid;
    
-   // $user is UID or User Object
+   // $user is UID or User Object or JID
    function __construct($user) {
       if (is_string($user) && ($pos=strpos($user, "@") ) !== false ) {
          $user = substr($user, 0, $pos);
