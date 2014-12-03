@@ -85,11 +85,21 @@ function extended_messaging_admin() {
          '#default_value' => variable_get('extended_messaging_auth_salt', 'None'),
    );
   
+   $privacy_options = array('blacklist'=>t('Blacklist'), 'whitelist'=>t('Whitelist'));
+   $form['extended_messaging']['xmpp']['extended_messaging_privacy_mode'] = array(
+         '#type' => 'select',
+         '#title' => t('XMPP Privacy list mode'),
+         '#description' => t("Blacklist means ANYBODY can contact each other, except those in users' blacklists.")."<br/>".t("Whitelist means NOBODY can contact each other, except those in users' whitelists."),
+         '#default_value' => EXTENDED_MESSAGING_XMPP_PRICACY_MODE,
+         '#options' => $privacy_options
+   );
+
    $form['extended_messaging']['extended_messaging_debug'] = array(
          '#type' => 'checkbox',
          '#title' => t('Display debug'),
          '#default_value' => variable_get('extended_messaging_debug', 0),
    );
+   
    $form = system_settings_form($form);
    
    return $form;
