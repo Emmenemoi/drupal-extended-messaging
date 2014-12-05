@@ -54,14 +54,14 @@ function extended_messaging_admin() {
    
    $form['extended_messaging']['xmpp']['extended_messaging_server'] = array(
          '#type' => 'textfield',
-         '#title' => t('XMPP server URL'),
+         '#title' => t('XMPP server BOSH URL'),
          '#description' => t('Should be a valid HTTP url to BOSH service or directly a websocket url (ws://). If Bosh service provided, will first try if websocket is possible at same host and standard port.'),
          '#default_value' => EXTENDED_MESSAGING_XMPP_SERVER,
    );
    
    $form['extended_messaging']['xmpp']['extended_messaging_ws_url'] = array(
          '#type' => 'textfield',
-         '#title' => t('XMPP server URL'),
+         '#title' => t('XMPP server Websocket URL'),
          '#description' => t('Should be a valid WS url to a websocket url (ws://) including port. (optional)'),
          '#default_value' => EXTENDED_MESSAGING_XMPP_WS_URL,
    );
