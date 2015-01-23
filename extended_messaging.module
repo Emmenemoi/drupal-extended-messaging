@@ -55,7 +55,8 @@ function extended_messaging_include_settings($with=0) {
                               array("xmppname"=>"Friends", "displayname"=>"Mes amis" ), 
 			  )), 
         ),
-         'roles' => user_roles(true),
+         //'roles' => user_roles(true),
+         'roles' => $user->roles,
          'rpcbase' => url('messaging/rpc/'),
          'debug' => variable_get('extended_messaging_debug', 0)
       );
