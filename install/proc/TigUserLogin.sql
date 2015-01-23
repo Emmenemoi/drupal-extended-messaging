@@ -7,7 +7,7 @@ begin
     if LEFT(_user_token, 6) = 'TOKEN|'
     then
         if exists(select 1 from extended_messaging_sessions
-            where (created > UNIX_TIMESTAMP()-60) AND (_uid = uid) AND (token = SUBSTRING(_user_token,7)))
+            where (_uid = uid) AND (token = SUBSTRING(_user_token,7)))
         then
             SET _result = _user_id;
         end if;

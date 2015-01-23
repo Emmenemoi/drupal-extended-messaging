@@ -76,3 +76,8 @@ function extended_messaging_include_settings($with=0) {
       $current[] = $settings;
    }
 }
+
+function extended_messaging_cron() {
+// clean old sessions
+  $result = db_query('DELETE FROM {extended_messaging_sessions} WHERE created < UNIX_TIMESTAMP()-60');
+}
