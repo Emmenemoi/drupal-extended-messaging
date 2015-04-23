@@ -1,0 +1,33 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Migration script
+ */
+
+require_once(drupal_get_path('module', 'em_migrate_prosody') .'/includes/batch_demo.users.inc');
+
+/**
+ * Implementation of hook_menu().
+ *
+ * We're simply mapping our admin page into Drupal's menu system.
+ */
+function em_migrate_prosody_menu() {
+
+    $items = array();
+
+    $items['admin/build/batch'] = array(
+        'title' => 'Messages migration',
+        'description' => 'Run batch operations.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('batch_demo_form'),
+        'access arguments' => array('administer site configuration'),
+        'file' => 'batch_demo.admin.inc',
+        'file path' => drupal_get_path('module', 'em_migrate_prosody') . '/includes',
+        'type' => MENU_NORMAL_ITEM,
+    );
+
+    return $items;
+}
+?>
