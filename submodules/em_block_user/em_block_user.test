@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Test file for pm_block_user.module
+ * Test file for em_block_user.module
  */
 
 class PrivatemsgBlockUserCase extends DrupalWebTestCase {
@@ -13,12 +13,12 @@ class PrivatemsgBlockUserCase extends DrupalWebTestCase {
     (
       'name' => t('User blocking functionality.'),
       'description' => t('Test blocking and unblocking of users'),
-      'group' => t('Privatemsg'),
+      'group' => t('XMPP'),
     );
   }
 
   function setUp() {
-    parent::setUp('privatemsg', 'pm_block_user');
+    parent::setUp('extended_messaging', 'em_block_user');
   }
 
   /**

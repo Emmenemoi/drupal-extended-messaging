@@ -2,10 +2,10 @@
 
 /**
  * @file
- * User menu callbacks for pm_block_user.module.
+ * User menu callbacks for em_block_user.module.
  */
 
-function pm_block_user_form(&$form_state, $author) {
+function em_block_user_form(&$form_state, $author) {
 
   global $user;
 
@@ -15,7 +15,7 @@ function pm_block_user_form(&$form_state, $author) {
   // Make sure the form redirects in the end
   $form['destination'] = array('#type' => 'hidden', '#value' => 'messages/blocked');
 
-    if (pm_block_user_has_blocked($author, $user)) {
+    if (em_block_user_has_blocked($author, $user)) {
 
         $form['block_action'] = array(
             '#type' => 'value',
@@ -40,7 +40,7 @@ function pm_block_user_form(&$form_state, $author) {
 /**
  * Submit callback for block user confirmation form.
  */
-function pm_block_user_form_submit($form, &$form_state) {
+function em_block_user_form_submit($form, &$form_state) {
   global $user;
 
   $author = user_load($form['#parameters'][2]->uid);
@@ -153,7 +153,7 @@ function pm_user_exists($uid) {
 /**
  * Formbuilder function to build a simple form to block users.
  */
-function pm_block_user_list() {
+function em_block_user_list() {
   global $user;
 
   $form['new'] = array(
@@ -170,8 +170,8 @@ function pm_block_user_list() {
   $form['new']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Block user'),
-    '#validate' => array('pm_block_user_block_validate'),
-    '#submit' => array('pm_block_user_block_submit'),
+    '#validate' => array('em_block_user_block_validate'),
+    '#submit' => array('em_block_user_block_submit'),
   );
 
   $header = array(
@@ -214,7 +214,7 @@ function pm_block_user_list() {
 /**
  * Validate user names.
  */
-function pm_block_user_block_validate($form, &$form_state) {
+function em_block_user_block_validate($form, &$form_state) {
   global $user;
   list($accounts, $invalid) = _privatemsg_parse_userstring($form_state['values']['name'], array('user'));
   // Remove accounts that can not be blocked.
@@ -222,13 +222,13 @@ function pm_block_user_block_validate($form, &$form_state) {
     foreach ($accounts as $id => $account) {
 
       // Check if the user can not be blocked because of a rule.
-      if (_pm_block_user_rule_exists($account, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
+      if (_em_block_user_rule_exists($account, $user, PM_BLOCK_USER_DISALLOW_BLOCKING)) {
         drupal_set_message(t('You are not allowed to block !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
         unset($accounts[$id]);
         continue;
       }
       // Check if the user is already blocked.
-      if (pm_block_user_has_blocked($account, $user)) {
+      if (em_block_user_has_blocked($account, $user)) {
         drupal_set_message(t('You have already blocked !account.', array('!account' => theme('username', array('account' => $account)))), 'warning');
         unset($accounts[$id]);
         continue;
@@ -257,7 +257,7 @@ function pm_block_user_block_validate($form, &$form_state) {
 /**
  * Submit callback for block user form.
  */
-function pm_block_user_block_submit($form, &$form_state) {
+function em_block_user_block_submit($form, &$form_state) {
   global $user;
 
   foreach ($form_state['valid_accounts'] as $account) {
@@ -334,7 +334,7 @@ function pm_block_user_block_submit($form, &$form_state) {
 /**
  * Theme function to theme the blocked user listing.
  */
-function theme_pm_block_user_list($form) {
+function theme_em_block_user_list($form) {
   return drupal_render_children($form) . theme('table', $form['#header'], $form['#rows']) . theme('pager');
 }
 
