@@ -3,5 +3,5 @@
 name = "Migration"
 description = "Migration of messages to Prosody XMPP"
 core = 6.x
-package = "Batches"
-dependencies[] = profile
+package = "XMPP"
+dependencies[] = extended_messaging
