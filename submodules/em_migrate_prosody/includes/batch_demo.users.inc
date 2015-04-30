@@ -32,13 +32,14 @@ function batch_demo_first_last() {
 }
 
 function _batch_get_stanza($message_id, $sender, $recipient, $message_content, $subject) {
+    $host = EXTENDED_MESSAGING_XMPP_DOMAIN == "" ? substr($cookie_domain, 1) : EXTENDED_MESSAGING_XMPP_DOMAIN;
 
     $a = array(
         'attr' => array(
             'id' => $message_id,
             'type' => 'chat',
             'to' => $recipient,
-            'from' => $sender.'@chat.dev.decroche-moi-la-lune.com'
+            'from' => $sender.'@'.$host
         ),
         'name' => 'message',
         '__array' => array(
@@ -75,7 +76,8 @@ function _batch_get_recipient($mid, $uid) {
         }
     }
 
-    return $recipient.'@chat.dev.decroche-moi-la-lune.com';
+    $host = EXTENDED_MESSAGING_XMPP_DOMAIN == "" ? substr($cookie_domain, 1) : EXTENDED_MESSAGING_XMPP_DOMAIN;
+    return $recipient.'@'.$host;
 }
 
 function generateRandomString($length = 5) {
@@ -97,11 +99,12 @@ function _batch_demo_fill_table_prosodyarchive(&$context) {
     $count = db_fetch_object(db_query("SELECT COUNT(*) as count FROM {pm_index}"));
     $results = db_query("SELECT * FROM {pm_index} LIMIT %d OFFSET %d", $limit, $offset);
 
+    $host = EXTENDED_MESSAGING_XMPP_DOMAIN == "" ? substr($cookie_domain, 1) : EXTENDED_MESSAGING_XMPP_DOMAIN;
+
     while ($row = db_fetch_object($results)) {
 
         $message = db_fetch_object(db_query("SELECT * FROM {pm_message} WHERE mid = %d", $row->mid));
 
-        $host = 'chat.dev.decroche-moi-la-lune.com';
         $user = $row->recipient;
         $store = 'archive2';
         $when = $message->timestamp;
@@ -196,9 +199,10 @@ function _batch_demo_fill_table_blockedusers(&$context) {
     $count = db_fetch_object(db_query("SELECT COUNT(*) as count FROM {pm_block_user}"));
     $results = db_query("SELECT * FROM {pm_block_user} LIMIT %d OFFSET %d", $limit, $offset);
 
+    $host = EXTENDED_MESSAGING_XMPP_DOMAIN == "" ? substr($cookie_domain, 1) : EXTENDED_MESSAGING_XMPP_DOMAIN;
+
     while ($row = db_fetch_object($results)) {
 
-        $host = 'localhost';
         $user = $row->author;
         $store = 'privacy';
         $key = 'lists';
@@ -215,7 +219,7 @@ function _batch_demo_fill_table_blockedusers(&$context) {
                 'type' => 'jid',
                 'action' => "deny",
                 'order' => 4,
-                'value' => $row->recipient.'@localhost',
+                'value' => $row->recipient.'@'.$host,
                 'presence-in' => false,
                 'iq' => false,
                 'presence-out' => false
@@ -244,7 +248,7 @@ function _batch_demo_fill_table_blockedusers(&$context) {
                             'type' => 'jid',
                             'action' => "deny",
                             'order' => 4,
-                            'value' => $row->recipient.'@localhost',
+                            'value' => $row->recipient.'@'.$host,
                             'presence-in' => false,
                             'iq' => false,
                             'presence-out' => false
