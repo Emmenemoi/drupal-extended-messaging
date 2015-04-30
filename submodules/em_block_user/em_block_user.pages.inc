@@ -44,6 +44,7 @@ function em_block_user_form_submit($form, &$form_state) {
   global $user;
 
   $author = user_load($form['#parameters'][2]->uid);
+  $host = EXTENDED_MESSAGING_XMPP_DOMAIN == "" ? substr($cookie_domain, 1) : EXTENDED_MESSAGING_XMPP_DOMAIN;
 
   if ($form_state['values']['confirm']) {
 
@@ -63,7 +64,7 @@ function em_block_user_form_submit($form, &$form_state) {
                       'type' => 'jid',
                       'action' => "deny",
                       'order' => 4,
-                      'value' => $author->uid.'@localhost',
+                      'value' => $author->uid.'@'.$host,
                       'presence-in' => false,
                       'iq' => false,
                       'presence-out' => false
@@ -74,7 +75,6 @@ function em_block_user_form_submit($form, &$form_state) {
                   db_query("UPDATE {prosody} SET value = '%s' WHERE user = %d AND store = 'privacy'", $value, $user->uid);
               } else {
 
-                  $host = 'localhost';
                   $user = $user->uid;
                   $store = 'privacy';
                   $key = 'lists';
@@ -97,7 +97,7 @@ function em_block_user_form_submit($form, &$form_state) {
                                   'type' => 'jid',
                                   'action' => "deny",
                                   'order' => 4,
-                                  'value' => $author->uid.'@localhost',
+                                  'value' => $author->uid.'@'.$host,
                                   'presence-in' => false,
                                   'iq' => false,
                                   'presence-out' => false
@@ -259,6 +259,7 @@ function em_block_user_block_validate($form, &$form_state) {
  */
 function em_block_user_block_submit($form, &$form_state) {
   global $user;
+  $host = EXTENDED_MESSAGING_XMPP_DOMAIN == "" ? substr($cookie_domain, 1) : EXTENDED_MESSAGING_XMPP_DOMAIN;
 
   foreach ($form_state['valid_accounts'] as $account) {
 
@@ -275,7 +276,7 @@ function em_block_user_block_submit($form, &$form_state) {
           'type' => 'jid',
           'action' => "deny",
           'order' => 4,
-          'value' => $account->uid.'@localhost',
+          'value' => $account->uid.'@'.$host,
           'presence-in' => false,
           'iq' => false,
           'presence-out' => false
@@ -303,7 +304,7 @@ function em_block_user_block_submit($form, &$form_state) {
                       'type' => 'jid',
                       'action' => "deny",
                       'order' => 4,
-                      'value' => $account->uid.'@localhost',
+                      'value' => $account->uid.'@'.$host,
                       'presence-in' => false,
                       'iq' => false,
                       'presence-out' => false
@@ -313,7 +314,7 @@ function em_block_user_block_submit($form, &$form_state) {
       );
 
         $data = array(
-            'host' => 'localhost',
+            'host' => $host,
             'user' => $user->uid,
             'store' => 'privacy',
             'key' => 'lists',
