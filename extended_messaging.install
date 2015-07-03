@@ -23,9 +23,11 @@ function extended_messaging_schema() {
 */
 function extended_messaging_install() {
   drupal_load('module', 'content');
-  content_notify('install', 'extended_messaging');
-  
-  extended_messaging_update_7000();
+  if (function_exists('content_notify')) {
+  	content_notify('install', 'extended_messaging');
+  }
+  $sandbox = array();
+  extended_messaging_update_7000($sandbox);
 }
 
 /**
@@ -49,7 +51,9 @@ function extended_messaging_enable() {
 */
 function extended_messaging_disable() {
   drupal_load('module', 'content');
-  content_notify('disable', 'extended_messaging');
+  if (function_exists('content_notify')) {
+	content_notify('disable', 'extended_messaging');
+  }
 }
 
 function extended_messaging_update_7000(&$sandbox) {
