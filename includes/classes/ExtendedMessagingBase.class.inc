@@ -34,7 +34,7 @@ abstract class ExtendedMessagingBase {
     * @return string
     */
    public static function getAuth(XMPPUser $user) {
-         $salt = variable_get('extended_messaging_auth_salt', None);
+         $salt = variable_get('extended_messaging_auth_salt', 'None');
          $timestamp = time();
          $login = $user->BareJID();
          $token = hash('sha256', $login . $timestamp . $salt);
