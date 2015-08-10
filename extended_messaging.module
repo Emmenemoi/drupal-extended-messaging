@@ -76,3 +76,39 @@ function extended_messaging_include_settings($with=0) {
    }
 }
 
+function extended_messaging_user_online($account) {
+   global $language;
+   //static $online_users;
+   $online_users = &drupal_static(__FUNCTION__);
+   if ($account->uid <= 0) {
+      return false;
+   }
+
+   if ( !isset($online_users) || !isset($online_user[$account->uid]) || $online_user[$account->uid]['exp'] > time() ) {
+      
+      if ( ($cache = cache_get('extended_messaging_online')) && !is_array( $online_users = $cache->data ) ) {
+         $online_users = array();
+      }
+
+      if (!isset($online_user[$account->uid]) || $online_user[$account->uid]['exp'] > time() ) {
+
+         $url = "http://".EXTENDED_MESSAGING_XMPP_DOMAIN.":5280/status/".$account->uid."@".EXTENDED_MESSAGING_XMPP_DOMAIN."/text";
+         $online = drupal_http_request($url, array('timeout'=>2));
+         if ($online->code == "200") {
+            /*$tmp = (array) json_decode($online->data);
+            // strange json_decode for {"3"=>"online"} value for example
+            foreach($tmp as $uid=>$status) {
+              $online_users[$uid] = "$status";
+            }*/
+            $online_users[$account->uid] = array('exp'=>time()+60, 's'=>$online->data);
+         } else {
+            watchdog('extended_messaging', "Impossible to update online user @ ".$url);
+         }
+
+         cache_set('extended_messaging_online', $online_users, time() + 3600) ;
+      }
+      //dpm($online_users);
+   }
+   //$online_users = array("3"=>'online', "4"=>'online');
+   return $online_users[$account->uid]['s'];
+}
