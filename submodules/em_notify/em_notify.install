@@ -1,0 +1,24 @@
+<?php
+
+function em_notify_schema() {
+   $schema['em_notify_users'] = array(
+     'fields' => array(
+       'uid'        => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE),
+        // Max frequency. 0 for unlimited. -1 for no messages
+       'freq'      => array('type' => 'int', 'not null' => TRUE, 'default' => 0),
+       'last'     => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE, 'default' => 0),
+    ),
+     'primary key' => array('uid'),
+     'indexes' => array(
+       'last'      => array('last'),
+     ),
+   );
+   
+   return $schema;
+}
+
+function em_notify_update_7000() {
+   if (!db_table_exists('em_notify_users')) {
+      drupal_install_schema('em_notify');
+   }
+}

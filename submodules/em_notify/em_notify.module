@@ -18,6 +18,12 @@ function em_notify_cronapi($op, $job = NULL) {
 }
 
 
+
+function _em_notify_is_enabled($uid) {
+  $settings = _em_notify_settings($uid);
+  return $settings['freq'] >= 0 ;
+}
+
 /**
  * Retrieve notification setting of a user.
  *
@@ -27,36 +33,51 @@ function em_notify_cronapi($op, $job = NULL) {
  * @param $uid
  *   User uid
  */
-function _em_notify_is_enabled($uid) {
-  return true;
+function _em_notify_settings($uid) {
+  $settings = &drupal_static('em_notify_settings');
+  if (!isset($settings[$uid])) {
+    $settings[$uid] = db_select('em_notify_users', 'n')
+        ->fields('n', array('freq', 'last'))
+        ->condition('n.uid', $uid)
+        ->range(0,1)
+        ->execute()
+        ->fetchAssoc();
+    if ($settings[$uid] === FALSE) {
+      $settings[$uid] = array(
+        'freq' => variable_get('em_notify_default', TRUE),
+        'last' => 0
+      );
+    }
+
+  }
+  return $settings[$uid];
 }
 
+
 /**
- * Implements hook_privatemsg_message_insert().
+ * Update notification setting of a user.
+ *
+ * This function updates user's pm notification preference from database,
+ *
+ * @param $uid $freq
+ *   User uid
+ *   int freq
  */
-function em_notify_privatemsg_message_insert($message) {
-  foreach ($message->recipients as $recipient) {
-    // check if recipient enabled email notifications
-    if (isset($recipient->uid) && _em_notify_is_enabled($recipient->uid)) {
-      // send them a new pm notification email if they did
-      $params['recipient'] = $recipient;
-      $params['message'] = $message;
-      // token replace for email from address
-      $data = array(
-        'privatemsg_message' => $params['message'],
-        'privatemsg_recipient' => $params['recipient'],
-      );
-      $options = array(
-        'language' => user_preferred_language($params['recipient']),
-        // Don't sanitize output since this is used in an email, not a browser.
-        'sanitize' => FALSE,
-        // Custom token to avoid custom token handling.
-        'privatemsg-display-invalid' => FALSE,
-      );
-      $from = trim(token_replace(variable_get('em_notify_from', ''), $data, $options));
-      drupal_mail('em_notify', 'notice', $recipient->mail, user_preferred_language($recipient), $params, !empty($from) ? $from : NULL);
-    }
+function _em_notify_settings_update($uid, $freq, $last_notified = null) {
+  $settings = &drupal_static('em_notify_settings');
+  unset($settings[$uid]);
+
+  $data = array(
+    'uid' => $uid,
+    'freq' => $freq,
+  );
+  if (!is_null($last_notified)) {
+    $data['last'] = $last_notified;
   }
+  return db_merge('em_notify_users')
+      ->key(array('uid' => $uid))
+      ->fields($data)
+      ->execute();
 }
 
 /**
@@ -74,7 +95,7 @@ function em_notify_mail($key, &$message, $params) {
         // Don't sanitize output since this is used in an email, not a browser.
         'sanitize' => FALSE,
         // Custom token to avoid custom token handling.
-        'privatemsg-display-invalid' => FALSE,
+        'em_notify-display-invalid' => FALSE,
       );
       $message['subject'] = trim(token_replace(variable_get('em_notify_subject', 'New privates messages at [site:name].'), $data, $options));
       $message['body'][] = trim(token_replace(variable_get('em_notify_body', _em_notify_default_body()), $data, $options));
@@ -86,7 +107,7 @@ function em_notify_mail($key, &$message, $params) {
  * Returns default email notification body.
  */
 function _em_notify_default_body() {
-  return "Hi [em_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [em_message:author].\n\nTo read your message, follow this link:\n[em_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[em_message:recipient:edit-url]";
+  return "Hi [em_message:recipient],\n\nThis is an automatic reminder from the site [site:name]. You have received a new private message from [em_message:author].\n\nTo read your message, follow this link:\n[em_message:url]\n\nIf you don't want to receive these emails again, change your preferences here:\n[em_message:author:edit-url]";
 }
 
 /**
@@ -104,7 +125,14 @@ function em_notify_form_alter(&$form, &$form_state, $form_id) {
         ),
       ),
     );
+    $form['#submit'][] = 'em_notify_form_submit';
   }
+}
+
+function em_notify_form_submit(&$form, &$form_state) {
+  $settings = $form_state['values']['em_send_notifications'] == 0 ? -1 : 0;
+  $uid = $form_state['values']['uid'];
+  _em_notify_settings_update($uid, $settings);
 }
 
 /**
@@ -233,84 +261,89 @@ function em_notify_token_info() {
  * Implements hook_tokens().
  */
 function em_notify_tokens($type, $tokens, array $data = array(), array $options = array()) {
-  global $user;
-  $url_options = array('absolute' => TRUE);
-  if (isset($options['language'])) {
-    $url_options['language'] = $options['language'];
-    $language_code = $options['language']->language;
-  }
-  else {
-    $language_code = NULL;
-  }
+  if ($type == 'em_message') {
+    global $user;
+    $url_options = array('absolute' => TRUE);
+    if (isset($options['language'])) {
+      $url_options['language'] = $options['language'];
+      $language_code = $options['language']->language;
+    }
+    else {
+      $language_code = NULL;
+    }
 
-  $recipient = $user;
-  if (isset($data['em_recipient'])) {
-    $recipient = $data['em_recipient'];
-  }
+    $recipient = $user;
+    if (isset($data['em_recipient'])) {
+      $recipient = $data['em_recipient'];
+    }
 
-  $sanitize = !empty($options['sanitize']) && $options['sanitize'];
-  $replacements = array();
-  if ($type == 'em_message' && !empty($data['em_message'])) {
-    $message = $data['em_message'];
+    $sanitize = !empty($options['sanitize']) && $options['sanitize'];
+    $replacements = array();
+    if ($type == 'em_message' && !empty($data['em_message'])) {
+      $message = $data['em_message'];
 
-    foreach ($tokens as $name => $original) {
-      switch ($name) {
-        case 'mid':
-          $replacements[$original] = $message->mid;
-          break;
-        case 'body':
-          // Avoid recursion.
-          if (empty($options['em_recursion'])) {
-            $replacements[$original] = em_notify_token_replace($sanitize ? check_markup($message->body, $message->format) : $message->body, $data, $options + array('em_recursion' => 1));
-          }
-          else {
-            $replacements[$original] = $sanitize ? check_markup($message->body, $message->format) : $message->body;
-          }
-          break;
-        case 'unreads':
-          // Avoid recursion.
-          if (empty($options['em_recursion'])) {
-            $replacements[$original] = em_notify_token_replace($sanitize ? check_markup($message->unreads, $message->format) : $message->unreads, $data, $options + array('em_recursion' => 1));
-          }
-          else {
-            $replacements[$original] = $sanitize ? check_markup($message->unreads, $message->format) : $message->unreads;
-          }
-          break;
-        case 'url':
-          /*$uri['path'] = 'messaging/chat';
-          $uri['options'] = isset($message->author) ? array('query'=>'#chat;new='.$message->author->uid)  : array() ;*/
-          $replacements[$original] = extended_messaging_url_to($message->author, $url_options); //url($uri['path'], $url_options + $uri['options']);
-          break;
+      foreach ($tokens as $name => $original) {
+        switch ($name) {
+          case 'mid':
+            $replacements[$original] = $message->mid;
+            break;
+          case 'body':
+            // Avoid recursion.
+            if (empty($options['em_recursion'])) {
+              $replacements[$original] = em_notify_token_replace($sanitize ? check_markup($message->body, $message->format) : $message->body, $data, $options + array('em_recursion' => 1));
+            }
+            else {
+              $replacements[$original] = $sanitize ? check_markup($message->body, $message->format) : $message->body;
+            }
+            break;
+          case 'unreads':
+            // Avoid recursion.
+            if (empty($options['em_recursion'])) {
+              $replacements[$original] = em_notify_token_replace($sanitize ? check_markup($message->unreads, $message->format) : $message->unreads, $data, $options + array('em_recursion' => 1));
+            }
+            else {
+              $replacements[$original] = $sanitize ? check_markup($message->unreads, $message->format) : $message->unreads;
+            }
+            break;
+          case 'url':
+            /*$uri['path'] = 'messaging/chat';
+            $uri['options'] = isset($message->author) ? array('query'=>'#chat;new='.$message->author->uid)  : array() ;*/
+            $replacements[$original] = em_messagesui_url_to(null, $url_options); //url($uri['path'], $url_options + $uri['options']);
+            break;
+          case 'settings-url':
+            /*$uri['path'] = 'messaging/chat';
+            $uri['options'] = isset($message->author) ? array('query'=>'#chat;new='.$message->author->uid)  : array() ;*/
+            $replacements[$original] = url('profile/settings', $url_options); //url($uri['path'], $url_options + $uri['options']);
+            break;
+          // Default values for the chained tokens handled below.
+          case 'author':
+            $replacements[$original] = $sanitize ? filter_xss( $message->author ) : $message->author ;
+            break;
 
-        // Default values for the chained tokens handled below.
-        case 'author':
-          $replacements[$original] = $sanitize ? filter_xss( $message->author ) : $message->author ;
-          break;
+          case 'recipient':
+              $replacements[$original] = $sanitize ? filter_xss( $recipient->name) : $recipient->name ;
+            break;
 
-        case 'recipient':
-            $replacements[$original] = $sanitize ? filter_xss( $recipient->name) : $recipient->name ;
-          break;
+          case 'timestamp':
+            $replacements[$original] = format_date($message->timestamp, 'medium', '', NULL, $language_code);
+            break;
+        }
+      }
+      if ($author_tokens = token_find_with_prefix($tokens, 'author')) {
+        $replacements += token_generate('user', $author_tokens, array('user' => $message->author), $options);
+      }
 
-        case 'timestamp':
-          $replacements[$original] = format_date($message->timestamp, 'medium', '', NULL, $language_code);
-          break;
+      if ($recipient_tokens = token_find_with_prefix($tokens, 'recipient')) {
+        $replacements += token_generate('user', $recipient_tokens, array('user' => $recipient), $options);
+      }
+
+      if ($sent_tokens = token_find_with_prefix($tokens, 'timestamp')) {
+        $replacements += token_generate('date', $sent_tokens, array('date' => $message->timestamp), $options);
       }
     }
 
-    if ($author_tokens = token_find_with_prefix($tokens, 'author')) {
-      $replacements += token_generate('user', $author_tokens, array('user' => $message->author), $options);
-    }
-
-    if ($recipient_tokens = token_find_with_prefix($tokens, 'recipient')) {
-      $replacements += token_generate('user', $recipient_tokens, array('user' => $recipient), $options);
-    }
-
-    if ($sent_tokens = token_find_with_prefix($tokens, 'timestamp')) {
-      $replacements += token_generate('date', $sent_tokens, array('date' => $message->timestamp), $options);
-    }
+    return $replacements;
   }
-
-  return $replacements;
 }
 
 /**

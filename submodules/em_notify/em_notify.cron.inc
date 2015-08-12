@@ -24,24 +24,29 @@ ORDER BY a.with, a.user ", array(
         foreach ($recipients as $jid => $senders) {
             $message = new stdClass();
             $message->unreads = "";
-            $current_user = user_load( str_replace('.'.EXTENDED_MESSAGING_XMPP_DOMAIN,'',$jid));
-            $message->recipient = $current_user;
-            foreach ($senders as $uid => $nb) {
-                $account = user_load($uid);
-                $message->unreads .= extended_messaging_l_to($account, array('absolute'=>true))." ({$nb})\n";
+            $current_uid = str_replace('@'.EXTENDED_MESSAGING_XMPP_DOMAIN,'',$jid);
+            $current_user = user_load( $current_uid);
+            $settings = _em_notify_settings($current_uid);
+            if ( _em_notify_is_enabled($current_uid) && extended_messaging_user_online($current_user) != 'online') {
+                $message->recipient = $current_user;
+                foreach ($senders as $uid => $nb) {
+                    $account = user_load($uid);
+                    $message->unreads .= l($account->name, em_messagesui_url_to($account , array('absolute'=>true)) )." ({$nb})\n";
+                }
+                $params['recipient'] = $current_user;
+                $params['message'] = $message;
+                $options = array(
+                    'language' => user_preferred_language($params['recipient']),
+                    // Don't sanitize output since this is used in an email, not a browser.
+                    'sanitize' => FALSE,
+                    // Custom token to avoid custom token handling.
+                    'privatemsg-display-invalid' => FALSE,
+                );
+                $from = trim(token_replace(variable_get('em_notify_from', ''), $data, $options));
+                drupal_mail('em_notify', 'notice', $current_user->mail, user_preferred_language($current_user), $params, !empty($from) ? $from : NULL); //$current_user->mail
+                _em_notify_settings_update($current_uid, $settings['freq'], time() ); 
+                //dpm($params);
             }
-            $params['recipient'] = $current_user;
-            $params['message'] = $message;
-            $options = array(
-                'language' => user_preferred_language($params['recipient']),
-                // Don't sanitize output since this is used in an email, not a browser.
-                'sanitize' => FALSE,
-                // Custom token to avoid custom token handling.
-                'privatemsg-display-invalid' => FALSE,
-            );
-            $from = trim(token_replace(variable_get('em_notify_from', ''), $data, $options));
-            drupal_mail('em_notify', 'notice', 'sfuchs@emmene-moi.fr', user_preferred_language($current_user), $params, !empty($from) ? $from : NULL); //$current_user->mail
-            //dpm($params);
         }
     }
 
