@@ -3,7 +3,6 @@
 
 function em_notify_unread_cron() {
     $last_notify = variable_get('em_notify_unread_last', 0);
-
     $result = db_query("SELECT a.with, a.user, count(a.sort_id) as nb FROM prosodyarchive AS a 
 INNER JOIN prosodychatmarkers AS markers ON (markers.archive_key=a.key AND markers.mark<2)
 WHERE a.when > :lastrun

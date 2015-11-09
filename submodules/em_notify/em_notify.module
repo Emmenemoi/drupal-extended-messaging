@@ -34,7 +34,7 @@ function _em_notify_is_enabled($uid) {
  *   User uid
  */
 function _em_notify_settings($uid) {
-  $settings = &drupal_static('em_notify_settings');
+  $settings = &drupal_static('em_notify_settings', array());
   if (!isset($settings[$uid])) {
     $settings[$uid] = db_select('em_notify_users', 'n')
         ->fields('n', array('freq', 'last'))
@@ -44,7 +44,7 @@ function _em_notify_settings($uid) {
         ->fetchAssoc();
     if ($settings[$uid] === FALSE) {
       $settings[$uid] = array(
-        'freq' => variable_get('em_notify_default', TRUE),
+        'freq' => variable_get('em_notify_default', TRUE) == 1 ? 0 : -1,
         'last' => 0
       );
     }
